@@ -501,6 +501,8 @@ export type Cycle = Node & {
   __typename?: "Cycle";
   /** The time at which the entity was archived. Null if the entity has not been archived. */
   archivedAt?: Maybe<Scalars["DateTime"]>;
+  /** The time at which the cycle was automatically archived by the auto pruning process. */
+  autoArchivedAt?: Maybe<Scalars["DateTime"]>;
   /** The completion time of the cycle. If null, the cycle hasn't been completed. */
   completedAt?: Maybe<Scalars["DateTime"]>;
   /** The number of completed issues in the cycle after each day. */
@@ -1322,6 +1324,28 @@ export type IssueCreateInput = {
   title: Scalars["String"];
 };
 
+export type IssueDescriptionHistory = {
+  __typename?: "IssueDescriptionHistory";
+  /** The ID of the author of the change. */
+  actorId?: Maybe<Scalars["String"]>;
+  /** The description data of the issue as a JSON serialized string. */
+  descriptionData: Scalars["String"];
+  /** The UUID of the change. */
+  id: Scalars["String"];
+  /** The type of the revision, whether it was the creation or update of the issue. */
+  type: Scalars["String"];
+  /** The date when the description was updated. */
+  updatedAt: Scalars["DateTime"];
+};
+
+export type IssueDescriptionHistoryPayload = {
+  __typename?: "IssueDescriptionHistoryPayload";
+  /** The issue that was created or updated. */
+  history?: Maybe<Array<IssueDescriptionHistory>>;
+  /** Whether the operation was successful. */
+  success: Scalars["Boolean"];
+};
+
 export type IssueEdge = {
   __typename?: "IssueEdge";
   /** Used in `before` and `after` args */
@@ -1369,7 +1393,7 @@ export type IssueHistory = Node & {
   /** The issue that was changed. */
   issue: Issue;
   /** Changed issue relationships. */
-  relationChanges?: Maybe<Scalars["String"]>;
+  relationChanges?: Maybe<Array<IssueRelationHistoryPayload>>;
   /** ID's of labels that were removed. */
   removedLabelIds?: Maybe<Array<Scalars["String"]>>;
   /** Information about the integration or application which created this history entry. */
@@ -1622,6 +1646,15 @@ export type IssueRelationEdge = {
   node: IssueRelation;
 };
 
+/** Issue relation history's payload */
+export type IssueRelationHistoryPayload = {
+  __typename?: "IssueRelationHistoryPayload";
+  /** The identifier of the related issue. */
+  identifier: Scalars["String"];
+  /** The type of the change. */
+  type: Scalars["String"];
+};
+
 export type IssueRelationPayload = {
   __typename?: "IssueRelationPayload";
   /** The issue relation that was created or updated. */
@@ -1774,6 +1807,8 @@ export type Mutation = {
   attachmentArchive: ArchivePayload;
   /** [Alpha] Creates a new attachment, or updates existing if the same `uri` is used. */
   attachmentCreate: AttachmentPayload;
+  /** Link an existing Zendesk ticket to an issue. */
+  attachmentLinkZendesk: AttachmentPayload;
   /** [Alpha] Updates an existing issue attachment. */
   attachmentUpdate: AttachmentPayload;
   /** Updates the billing email address for the customer. */
@@ -2052,6 +2087,11 @@ export type MutationAttachmentCreateArgs = {
   input: AttachmentCreateInput;
 };
 
+export type MutationAttachmentLinkZendeskArgs = {
+  issueId: Scalars["String"];
+  ticketId: Scalars["String"];
+};
+
 export type MutationAttachmentUpdateArgs = {
   id: Scalars["String"];
   input: AttachmentUpdateInput;
@@ -2253,6 +2293,7 @@ export type MutationIssueCreateArgs = {
 export type MutationIssueImportCreateAsanaArgs = {
   asanaTeamName: Scalars["String"];
   asanaToken: Scalars["String"];
+  id?: Maybe<Scalars["String"]>;
   instantProcess?: Maybe<Scalars["Boolean"]>;
   teamId: Scalars["String"];
 };
@@ -2260,6 +2301,7 @@ export type MutationIssueImportCreateAsanaArgs = {
 export type MutationIssueImportCreateClubhouseArgs = {
   clubhouseTeamName: Scalars["String"];
   clubhouseToken: Scalars["String"];
+  id?: Maybe<Scalars["String"]>;
   instantProcess?: Maybe<Scalars["Boolean"]>;
   teamId: Scalars["String"];
 };
@@ -2269,11 +2311,13 @@ export type MutationIssueImportCreateGithubArgs = {
   githubRepoOwner: Scalars["String"];
   githubShouldImportOrgProjects?: Maybe<Scalars["Boolean"]>;
   githubToken: Scalars["String"];
+  id?: Maybe<Scalars["String"]>;
   instantProcess?: Maybe<Scalars["Boolean"]>;
   teamId: Scalars["String"];
 };
 
 export type MutationIssueImportCreateJiraArgs = {
+  id?: Maybe<Scalars["String"]>;
   instantProcess?: Maybe<Scalars["Boolean"]>;
   jiraEmail: Scalars["String"];
   jiraHostname: Scalars["String"];
@@ -3079,6 +3123,8 @@ export type Project = Node & {
   __typename?: "Project";
   /** The time at which the entity was archived. Null if the entity has not been archived. */
   archivedAt?: Maybe<Scalars["DateTime"]>;
+  /** The time at which the project was automatically archived by the auto pruning process. */
+  autoArchivedAt?: Maybe<Scalars["DateTime"]>;
   /** The time at which the project was moved into canceled state. */
   canceledAt?: Maybe<Scalars["DateTime"]>;
   /** The project's color. */
@@ -3125,6 +3171,8 @@ export type Project = Node & {
   slugId: Scalars["String"];
   /** The sort order for the project within its milestone. */
   sortOrder: Scalars["Float"];
+  /** [Internal] The estimated start date of the project. */
+  startDate?: Maybe<Scalars["TimelessDateScalar"]>;
   /** The time at which the project was moved into started state. */
   startedAt?: Maybe<Scalars["DateTime"]>;
   /** The type of the state. */
@@ -3206,6 +3254,8 @@ export type ProjectCreateInput = {
   name: Scalars["String"];
   /** The sort order for the project within its milestone. */
   sortOrder?: Maybe<Scalars["Float"]>;
+  /** [Internal] The planned start date of the project. */
+  startDate?: Maybe<Scalars["TimelessDateScalar"]>;
   /** The state of the project. */
   state?: Maybe<Scalars["String"]>;
   /** The planned target date of the project. */
@@ -3313,6 +3363,8 @@ export type ProjectUpdateInput = {
   slackNewIssue?: Maybe<Scalars["Boolean"]>;
   /** The sort order for the project within its milestone. */
   sortOrder?: Maybe<Scalars["Float"]>;
+  /** [Internal] The planned start date of the project. */
+  startDate?: Maybe<Scalars["TimelessDateScalar"]>;
   /** The state of the project. */
   state?: Maybe<Scalars["String"]>;
   /** The planned target date of the project. */
@@ -3446,6 +3498,8 @@ export type Query = {
   inviteInfo: InvitePagePayload;
   /** One specific issue. */
   issue: Issue;
+  /** [Internal] The history of issue descriptions. */
+  issueDescriptionHistory: IssueDescriptionHistoryPayload;
   /** Fetches the GitHub token, completing the OAuth flow. */
   issueImportFinishGithubOAuth: GithubOAuthTokenPayload;
   /** One specific label. */
@@ -3685,6 +3739,10 @@ export type QueryInviteInfoArgs = {
 };
 
 export type QueryIssueArgs = {
+  id: Scalars["String"];
+};
+
+export type QueryIssueDescriptionHistoryArgs = {
   id: Scalars["String"];
 };
 
@@ -5271,6 +5329,7 @@ export type ProjectFragment = { __typename?: "Project" } & Pick<
   | "sortOrder"
   | "archivedAt"
   | "createdAt"
+  | "autoArchivedAt"
   | "canceledAt"
   | "completedAt"
   | "startedAt"
@@ -5281,6 +5340,7 @@ export type ProjectFragment = { __typename?: "Project" } & Pick<
   | "slackIssueComments"
   | "slackNewIssue"
   | "slackIssueStatuses"
+  | "startDate"
 > & {
     milestone?: Maybe<{ __typename?: "Milestone" } & Pick<Milestone, "id">>;
     lead?: Maybe<{ __typename?: "User" } & Pick<User, "id">>;
@@ -5294,7 +5354,6 @@ export type ReactionFragment = { __typename?: "Reaction" } & Pick<
 
 export type IssueHistoryFragment = { __typename?: "IssueHistory" } & Pick<
   IssueHistory,
-  | "relationChanges"
   | "addedLabelIds"
   | "removedLabelIds"
   | "source"
@@ -5315,6 +5374,9 @@ export type IssueHistoryFragment = { __typename?: "IssueHistory" } & Pick<
   | "autoArchived"
   | "autoClosed"
 > & {
+    relationChanges?: Maybe<
+      Array<{ __typename?: "IssueRelationHistoryPayload" } & IssueRelationHistoryPayloadFragment>
+    >;
     issue: { __typename?: "Issue" } & Pick<Issue, "id">;
     toCycle?: Maybe<{ __typename?: "Cycle" } & Pick<Cycle, "id">>;
     toParent?: Maybe<{ __typename?: "Issue" } & Pick<Issue, "id">>;
@@ -5351,6 +5413,7 @@ export type CycleFragment = { __typename?: "Cycle" } & Pick<
   | "completedIssueCountHistory"
   | "number"
   | "startsAt"
+  | "autoArchivedAt"
   | "archivedAt"
   | "createdAt"
   | "scopeHistory"
@@ -5583,6 +5646,11 @@ export type IntegrationResourceDataFragment = { __typename?: "IntegrationResourc
   gitlabMergeRequest?: Maybe<{ __typename?: "PullRequestPayload" } & PullRequestPayloadFragment>;
   sentryIssue?: Maybe<{ __typename?: "SentryIssuePayload" } & SentryIssuePayloadFragment>;
 };
+
+export type IssueRelationHistoryPayloadFragment = { __typename?: "IssueRelationHistoryPayload" } & Pick<
+  IssueRelationHistoryPayload,
+  "identifier" | "type"
+>;
 
 export type IssueLabelFragment = { __typename?: "IssueLabel" } & Pick<
   IssueLabel,
@@ -5917,6 +5985,16 @@ export type IssueConnectionFragment = { __typename?: "IssueConnection" } & {
   nodes: Array<{ __typename?: "Issue" } & IssueFragment>;
   pageInfo: { __typename?: "PageInfo" } & PageInfoFragment;
 };
+
+export type IssueDescriptionHistoryFragment = { __typename?: "IssueDescriptionHistory" } & Pick<
+  IssueDescriptionHistory,
+  "actorId" | "id" | "updatedAt" | "descriptionData" | "type"
+>;
+
+export type IssueDescriptionHistoryPayloadFragment = { __typename?: "IssueDescriptionHistoryPayload" } & Pick<
+  IssueDescriptionHistoryPayload,
+  "success"
+> & { history?: Maybe<Array<{ __typename?: "IssueDescriptionHistory" } & IssueDescriptionHistoryFragment>> };
 
 export type IssueHistoryConnectionFragment = { __typename?: "IssueHistoryConnection" } & {
   nodes: Array<{ __typename?: "IssueHistory" } & IssueHistoryFragment>;
@@ -6767,6 +6845,14 @@ export type Issue_SubscribersQuery = { __typename?: "Query" } & {
   issue: { __typename?: "Issue" } & { subscribers: { __typename?: "UserConnection" } & UserConnectionFragment };
 };
 
+export type IssueDescriptionHistoryQueryVariables = Exact<{
+  id: Scalars["String"];
+}>;
+
+export type IssueDescriptionHistoryQuery = { __typename?: "Query" } & {
+  issueDescriptionHistory: { __typename?: "IssueDescriptionHistoryPayload" } & IssueDescriptionHistoryPayloadFragment;
+};
+
 export type IssueImportFinishGithubOAuthQueryVariables = Exact<{
   code: Scalars["String"];
 }>;
@@ -7609,6 +7695,15 @@ export type AttachmentCreateMutation = { __typename?: "Mutation" } & {
   attachmentCreate: { __typename?: "AttachmentPayload" } & AttachmentPayloadFragment;
 };
 
+export type AttachmentLinkZendeskMutationVariables = Exact<{
+  issueId: Scalars["String"];
+  ticketId: Scalars["String"];
+}>;
+
+export type AttachmentLinkZendeskMutation = { __typename?: "Mutation" } & {
+  attachmentLinkZendesk: { __typename?: "AttachmentPayload" } & AttachmentPayloadFragment;
+};
+
 export type AttachmentUpdateMutationVariables = Exact<{
   id: Scalars["String"];
   input: AttachmentUpdateInput;
@@ -8006,6 +8101,7 @@ export type IssueCreateMutation = { __typename?: "Mutation" } & {
 export type IssueImportCreateAsanaMutationVariables = Exact<{
   asanaTeamName: Scalars["String"];
   asanaToken: Scalars["String"];
+  id?: Maybe<Scalars["String"]>;
   instantProcess?: Maybe<Scalars["Boolean"]>;
   teamId: Scalars["String"];
 }>;
@@ -8017,6 +8113,7 @@ export type IssueImportCreateAsanaMutation = { __typename?: "Mutation" } & {
 export type IssueImportCreateClubhouseMutationVariables = Exact<{
   clubhouseTeamName: Scalars["String"];
   clubhouseToken: Scalars["String"];
+  id?: Maybe<Scalars["String"]>;
   instantProcess?: Maybe<Scalars["Boolean"]>;
   teamId: Scalars["String"];
 }>;
@@ -8030,6 +8127,7 @@ export type IssueImportCreateGithubMutationVariables = Exact<{
   githubRepoOwner: Scalars["String"];
   githubShouldImportOrgProjects?: Maybe<Scalars["Boolean"]>;
   githubToken: Scalars["String"];
+  id?: Maybe<Scalars["String"]>;
   instantProcess?: Maybe<Scalars["Boolean"]>;
   teamId: Scalars["String"];
 }>;
@@ -8039,6 +8137,7 @@ export type IssueImportCreateGithubMutation = { __typename?: "Mutation" } & {
 };
 
 export type IssueImportCreateJiraMutationVariables = Exact<{
+  id?: Maybe<Scalars["String"]>;
   instantProcess?: Maybe<Scalars["Boolean"]>;
   jiraEmail: Scalars["String"];
   jiraHostname: Scalars["String"];
@@ -9920,6 +10019,7 @@ export const CycleFragmentDoc: DocumentNode<CycleFragment, unknown> = {
               selections: [{ kind: "Field", name: { kind: "Name", value: "id" } }],
             },
           },
+          { kind: "Field", name: { kind: "Name", value: "autoArchivedAt" } },
           { kind: "Field", name: { kind: "Name", value: "archivedAt" } },
           { kind: "Field", name: { kind: "Name", value: "createdAt" } },
           { kind: "Field", name: { kind: "Name", value: "scopeHistory" } },
@@ -10814,6 +10914,71 @@ export const IssueConnectionFragmentDoc: DocumentNode<IssueConnectionFragment, u
     ...PageInfoFragmentDoc.definitions,
   ],
 };
+export const IssueDescriptionHistoryFragmentDoc: DocumentNode<IssueDescriptionHistoryFragment, unknown> = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "IssueDescriptionHistory" },
+      typeCondition: { kind: "NamedType", name: { kind: "Name", value: "IssueDescriptionHistory" } },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "actorId" } },
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "descriptionData" } },
+          { kind: "Field", name: { kind: "Name", value: "type" } },
+        ],
+      },
+    },
+  ],
+};
+export const IssueDescriptionHistoryPayloadFragmentDoc: DocumentNode<
+  IssueDescriptionHistoryPayloadFragment,
+  unknown
+> = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "IssueDescriptionHistoryPayload" },
+      typeCondition: { kind: "NamedType", name: { kind: "Name", value: "IssueDescriptionHistoryPayload" } },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "history" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [{ kind: "FragmentSpread", name: { kind: "Name", value: "IssueDescriptionHistory" } }],
+            },
+          },
+          { kind: "Field", name: { kind: "Name", value: "success" } },
+        ],
+      },
+    },
+    ...IssueDescriptionHistoryFragmentDoc.definitions,
+  ],
+};
+export const IssueRelationHistoryPayloadFragmentDoc: DocumentNode<IssueRelationHistoryPayloadFragment, unknown> = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "IssueRelationHistoryPayload" },
+      typeCondition: { kind: "NamedType", name: { kind: "Name", value: "IssueRelationHistoryPayload" } },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "identifier" } },
+          { kind: "Field", name: { kind: "Name", value: "type" } },
+        ],
+      },
+    },
+  ],
+};
 export const IssueHistoryFragmentDoc: DocumentNode<IssueHistoryFragment, unknown> = {
   kind: "Document",
   definitions: [
@@ -10824,7 +10989,14 @@ export const IssueHistoryFragmentDoc: DocumentNode<IssueHistoryFragment, unknown
       selectionSet: {
         kind: "SelectionSet",
         selections: [
-          { kind: "Field", name: { kind: "Name", value: "relationChanges" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "relationChanges" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [{ kind: "FragmentSpread", name: { kind: "Name", value: "IssueRelationHistoryPayload" } }],
+            },
+          },
           { kind: "Field", name: { kind: "Name", value: "addedLabelIds" } },
           { kind: "Field", name: { kind: "Name", value: "removedLabelIds" } },
           { kind: "Field", name: { kind: "Name", value: "source" } },
@@ -10959,6 +11131,7 @@ export const IssueHistoryFragmentDoc: DocumentNode<IssueHistoryFragment, unknown
         ],
       },
     },
+    ...IssueRelationHistoryPayloadFragmentDoc.definitions,
   ],
 };
 export const IssueHistoryConnectionFragmentDoc: DocumentNode<IssueHistoryConnectionFragment, unknown> = {
@@ -11917,6 +12090,7 @@ export const ProjectFragmentDoc: DocumentNode<ProjectFragment, unknown> = {
           { kind: "Field", name: { kind: "Name", value: "sortOrder" } },
           { kind: "Field", name: { kind: "Name", value: "archivedAt" } },
           { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "autoArchivedAt" } },
           { kind: "Field", name: { kind: "Name", value: "canceledAt" } },
           { kind: "Field", name: { kind: "Name", value: "completedAt" } },
           { kind: "Field", name: { kind: "Name", value: "startedAt" } },
@@ -11935,6 +12109,7 @@ export const ProjectFragmentDoc: DocumentNode<ProjectFragment, unknown> = {
           { kind: "Field", name: { kind: "Name", value: "slackIssueComments" } },
           { kind: "Field", name: { kind: "Name", value: "slackNewIssue" } },
           { kind: "Field", name: { kind: "Name", value: "slackIssueStatuses" } },
+          { kind: "Field", name: { kind: "Name", value: "startDate" } },
         ],
       },
     },
@@ -16762,6 +16937,47 @@ export const Issue_SubscribersDocument: DocumentNode<Issue_SubscribersQuery, Iss
       },
     },
     ...UserConnectionFragmentDoc.definitions,
+  ],
+};
+export const IssueDescriptionHistoryDocument: DocumentNode<
+  IssueDescriptionHistoryQuery,
+  IssueDescriptionHistoryQueryVariables
+> = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "issueDescriptionHistory" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: { kind: "NonNullType", type: { kind: "NamedType", name: { kind: "Name", value: "String" } } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "issueDescriptionHistory" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [{ kind: "FragmentSpread", name: { kind: "Name", value: "IssueDescriptionHistoryPayload" } }],
+            },
+          },
+        ],
+      },
+    },
+    ...IssueDescriptionHistoryPayloadFragmentDoc.definitions,
   ],
 };
 export const IssueImportFinishGithubOAuthDocument: DocumentNode<
@@ -22366,6 +22582,57 @@ export const AttachmentCreateDocument: DocumentNode<AttachmentCreateMutation, At
     ...AttachmentPayloadFragmentDoc.definitions,
   ],
 };
+export const AttachmentLinkZendeskDocument: DocumentNode<
+  AttachmentLinkZendeskMutation,
+  AttachmentLinkZendeskMutationVariables
+> = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "attachmentLinkZendesk" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "issueId" } },
+          type: { kind: "NonNullType", type: { kind: "NamedType", name: { kind: "Name", value: "String" } } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "ticketId" } },
+          type: { kind: "NonNullType", type: { kind: "NamedType", name: { kind: "Name", value: "String" } } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "attachmentLinkZendesk" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "issueId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "issueId" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "ticketId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "ticketId" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [{ kind: "FragmentSpread", name: { kind: "Name", value: "AttachmentPayload" } }],
+            },
+          },
+        ],
+      },
+    },
+    ...AttachmentPayloadFragmentDoc.definitions,
+  ],
+};
 export const AttachmentUpdateDocument: DocumentNode<AttachmentUpdateMutation, AttachmentUpdateMutationVariables> = {
   kind: "Document",
   definitions: [
@@ -24475,6 +24742,11 @@ export const IssueImportCreateAsanaDocument: DocumentNode<
         },
         {
           kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+        {
+          kind: "VariableDefinition",
           variable: { kind: "Variable", name: { kind: "Name", value: "instantProcess" } },
           type: { kind: "NamedType", name: { kind: "Name", value: "Boolean" } },
         },
@@ -24500,6 +24772,11 @@ export const IssueImportCreateAsanaDocument: DocumentNode<
                 kind: "Argument",
                 name: { kind: "Name", value: "asanaToken" },
                 value: { kind: "Variable", name: { kind: "Name", value: "asanaToken" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
               },
               {
                 kind: "Argument",
@@ -24546,6 +24823,11 @@ export const IssueImportCreateClubhouseDocument: DocumentNode<
         },
         {
           kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+        {
+          kind: "VariableDefinition",
           variable: { kind: "Variable", name: { kind: "Name", value: "instantProcess" } },
           type: { kind: "NamedType", name: { kind: "Name", value: "Boolean" } },
         },
@@ -24571,6 +24853,11 @@ export const IssueImportCreateClubhouseDocument: DocumentNode<
                 kind: "Argument",
                 name: { kind: "Name", value: "clubhouseToken" },
                 value: { kind: "Variable", name: { kind: "Name", value: "clubhouseToken" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
               },
               {
                 kind: "Argument",
@@ -24627,6 +24914,11 @@ export const IssueImportCreateGithubDocument: DocumentNode<
         },
         {
           kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+        {
+          kind: "VariableDefinition",
           variable: { kind: "Variable", name: { kind: "Name", value: "instantProcess" } },
           type: { kind: "NamedType", name: { kind: "Name", value: "Boolean" } },
         },
@@ -24665,6 +24957,11 @@ export const IssueImportCreateGithubDocument: DocumentNode<
               },
               {
                 kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+              {
+                kind: "Argument",
                 name: { kind: "Name", value: "instantProcess" },
                 value: { kind: "Variable", name: { kind: "Name", value: "instantProcess" } },
               },
@@ -24696,6 +24993,11 @@ export const IssueImportCreateJiraDocument: DocumentNode<
       operation: "mutation",
       name: { kind: "Name", value: "issueImportCreateJira" },
       variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
         {
           kind: "VariableDefinition",
           variable: { kind: "Variable", name: { kind: "Name", value: "instantProcess" } },
@@ -24734,6 +25036,11 @@ export const IssueImportCreateJiraDocument: DocumentNode<
             kind: "Field",
             name: { kind: "Name", value: "issueImportCreateJira" },
             arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "instantProcess" },

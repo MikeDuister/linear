@@ -709,6 +709,10 @@ type Cycle implements Node {
   """
   archivedAt: DateTime
   """
+  The time at which the cycle was automatically archived by the auto pruning process.
+  """
+  autoArchivedAt: DateTime
+  """
   The completion time of the cycle. If null, the cycle hasn't been completed.
   """
   completedAt: DateTime
@@ -2071,6 +2075,38 @@ input IssueCreateInput {
   """
   title: String!
 }
+type IssueDescriptionHistory {
+  """
+  The ID of the author of the change.
+  """
+  actorId: String
+  """
+  The description data of the issue as a JSON serialized string.
+  """
+  descriptionData: String!
+  """
+  The UUID of the change.
+  """
+  id: String!
+  """
+  The type of the revision, whether it was the creation or update of the issue.
+  """
+  type: String!
+  """
+  The date when the description was updated.
+  """
+  updatedAt: DateTime!
+}
+type IssueDescriptionHistoryPayload {
+  """
+  The issue that was created or updated.
+  """
+  history: [IssueDescriptionHistory!]
+  """
+  Whether the operation was successful.
+  """
+  success: Boolean!
+}
 type IssueEdge {
   """
   Used in `before` and `after` args
@@ -2155,7 +2191,7 @@ type IssueHistory implements Node {
   """
   Changed issue relationships.
   """
-  relationChanges: String
+  relationChanges: [IssueRelationHistoryPayload!]
   """
   ID's of labels that were removed.
   """
@@ -2534,6 +2570,19 @@ type IssueRelationEdge {
   cursor: String!
   node: IssueRelation!
 }
+"""
+Issue relation history's payload
+"""
+type IssueRelationHistoryPayload {
+  """
+  The identifier of the related issue.
+  """
+  identifier: String!
+  """
+  The type of the change.
+  """
+  type: String!
+}
 type IssueRelationPayload {
   """
   The issue relation that was created or updated.
@@ -2803,6 +2852,19 @@ type Mutation {
     The attachment object to create.
     """
     input: AttachmentCreateInput!
+  ): AttachmentPayload!
+  """
+  Link an existing Zendesk ticket to an issue.
+  """
+  attachmentLinkZendesk(
+    """
+    The issue for which to link the .
+    """
+    issueId: String!
+    """
+    The Zendesk ticket ID to link.
+    """
+    ticketId: String!
   ): AttachmentPayload!
   """
   [Alpha] Updates an existing issue attachment.
@@ -3310,6 +3372,10 @@ type Mutation {
     """
     asanaToken: String!
     """
+    ID of issue import. If not provided it will be generated.
+    """
+    id: String
+    """
     Whether to instantly process the import with the default configuration mapping.
     """
     instantProcess: Boolean
@@ -3330,6 +3396,10 @@ type Mutation {
     Clubhouse token to fetch information from the Clubhouse API.
     """
     clubhouseToken: String!
+    """
+    ID of issue import. If not provided it will be generated.
+    """
+    id: String
     """
     Whether to instantly process the import with the default configuration mapping.
     """
@@ -3360,6 +3430,10 @@ type Mutation {
     """
     githubToken: String!
     """
+    ID of issue import. If not provided it will be generated.
+    """
+    id: String
+    """
     Whether to instantly process the import with the default configuration mapping.
     """
     instantProcess: Boolean
@@ -3372,6 +3446,10 @@ type Mutation {
   Kicks off a Jira import job.
   """
   issueImportCreateJira(
+    """
+    ID of issue import. If not provided it will be generated.
+    """
+    id: String
     """
     Whether to instantly process the import with the default configuration mapping.
     """
@@ -4925,6 +5003,10 @@ type Project implements Node {
   """
   archivedAt: DateTime
   """
+  The time at which the project was automatically archived by the auto pruning process.
+  """
+  autoArchivedAt: DateTime
+  """
   The time at which the project was moved into canceled state.
   """
   canceledAt: DateTime
@@ -5092,6 +5174,10 @@ type Project implements Node {
   """
   sortOrder: Float!
   """
+  [Internal] The estimated start date of the project.
+  """
+  startDate: TimelessDateScalar
+  """
   The time at which the project was moved into started state.
   """
   startedAt: DateTime
@@ -5180,6 +5266,10 @@ input ProjectCreateInput {
   The sort order for the project within its milestone.
   """
   sortOrder: Float
+  """
+  [Internal] The planned start date of the project.
+  """
+  startDate: TimelessDateScalar
   """
   The state of the project.
   """
@@ -5341,6 +5431,10 @@ input ProjectUpdateInput {
   The sort order for the project within its milestone.
   """
   sortOrder: Float
+  """
+  [Internal] The planned start date of the project.
+  """
+  startDate: TimelessDateScalar
   """
   The state of the project.
   """
@@ -5859,6 +5953,10 @@ type Query {
   One specific issue.
   """
   issue(id: String!): Issue!
+  """
+  [Internal] The history of issue descriptions.
+  """
+  issueDescriptionHistory(id: String!): IssueDescriptionHistoryPayload!
   """
   Fetches the GitHub token, completing the OAuth flow.
   """

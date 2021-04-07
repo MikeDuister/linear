@@ -642,6 +642,17 @@ describe("generated", () => {
     });
   });
 
+  /** Test IssueDescriptionHistory query */
+  describe("IssueDescriptionHistory", () => {
+    /** Test the root model query for IssueDescriptionHistory */
+    it("issueDescriptionHistory", async () => {
+      const issueDescriptionHistory:
+        | L.IssueDescriptionHistoryPayload
+        | undefined = await client.issueDescriptionHistory("mock-id");
+      expect(issueDescriptionHistory instanceof L.IssueDescriptionHistoryPayload);
+    });
+  });
+
   /** Test IssueImportFinishGithubOAuth query */
   describe("IssueImportFinishGithubOAuth", () => {
     /** Test the root model query for IssueImportFinishGithubOAuth */

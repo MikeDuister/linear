@@ -171,6 +171,8 @@ fragment Project on Project {
   archivedAt
   # The time at which the entity was created.
   createdAt
+  # The time at which the project was automatically archived by the auto pruning process.
+  autoArchivedAt
   # The time at which the project was moved into canceled state.
   canceledAt
   # The time at which the project was moved into completed state.
@@ -195,6 +197,8 @@ fragment Project on Project {
   slackNewIssue
   # Whether to send new issue status updates to Slack.
   slackIssueStatuses
+  # [Internal] The estimated start date of the project.
+  startDate
 }
 
 # A reaction associated with a comment.
@@ -223,7 +227,9 @@ fragment Reaction on Reaction {
 # A record of changes to an issue.
 fragment IssueHistory on IssueHistory {
   # Changed issue relationships.
-  relationChanges
+  relationChanges {
+    ...IssueRelationHistoryPayload
+  }
   # ID's of labels that were added.
   addedLabelIds
   # ID's of labels that were removed.
@@ -385,6 +391,8 @@ fragment Cycle on Cycle {
   team {
     id
   }
+  # The time at which the cycle was automatically archived by the auto pruning process.
+  autoArchivedAt
   # The time at which the entity was archived. Null if the entity has not been archived.
   archivedAt
   # The time at which the entity was created.
@@ -1048,6 +1056,14 @@ fragment IntegrationResourceData on IntegrationResourceData {
   sentryIssue {
     ...SentryIssuePayload
   }
+}
+
+# Issue relation history's payload
+fragment IssueRelationHistoryPayload on IssueRelationHistoryPayload {
+  # The identifier of the related issue.
+  identifier
+  # The type of the change.
+  type
 }
 
 # Labels that can be associated with issues.
@@ -1816,6 +1832,28 @@ fragment IssueConnection on IssueConnection {
   pageInfo {
     ...PageInfo
   }
+}
+
+fragment IssueDescriptionHistory on IssueDescriptionHistory {
+  # The ID of the author of the change.
+  actorId
+  # The UUID of the change.
+  id
+  # The date when the description was updated.
+  updatedAt
+  # The description data of the issue as a JSON serialized string.
+  descriptionData
+  # The type of the revision, whether it was the creation or update of the issue.
+  type
+}
+
+fragment IssueDescriptionHistoryPayload on IssueDescriptionHistoryPayload {
+  # The issue that was created or updated.
+  history {
+    ...IssueDescriptionHistory
+  }
+  # Whether the operation was successful.
+  success
 }
 
 fragment IssueHistoryConnection on IssueHistoryConnection {
@@ -3296,6 +3334,12 @@ query issue_subscribers(
     }
   }
 }
+# [Internal] The history of issue descriptions.
+query issueDescriptionHistory($id: String!) {
+  issueDescriptionHistory(id: $id) {
+    ...IssueDescriptionHistoryPayload
+  }
+}
 # Fetches the GitHub token, completing the OAuth flow.
 query issueImportFinishGithubOAuth(
   # OAuth code.
@@ -4771,6 +4815,17 @@ mutation attachmentCreate(
     ...AttachmentPayload
   }
 }
+# Link an existing Zendesk ticket to an issue.
+mutation attachmentLinkZendesk(
+  # The issue for which to link the .
+  $issueId: String!
+  # The Zendesk ticket ID to link.
+  $ticketId: String!
+) {
+  attachmentLinkZendesk(issueId: $issueId, ticketId: $ticketId) {
+    ...AttachmentPayload
+  }
+}
 # [Alpha] Updates an existing issue attachment.
 mutation attachmentUpdate(
   # The identifier of the comment to update.
@@ -5229,6 +5284,8 @@ mutation issueImportCreateAsana(
   $asanaTeamName: String!
   # Asana token to fetch information from the Asana API.
   $asanaToken: String!
+  # ID of issue import. If not provided it will be generated.
+  $id: String
   # Whether to instantly process the import with the default configuration mapping.
   $instantProcess: Boolean
   # ID of the team into which to import data.
@@ -5237,6 +5294,7 @@ mutation issueImportCreateAsana(
   issueImportCreateAsana(
     asanaTeamName: $asanaTeamName
     asanaToken: $asanaToken
+    id: $id
     instantProcess: $instantProcess
     teamId: $teamId
   ) {
@@ -5249,6 +5307,8 @@ mutation issueImportCreateClubhouse(
   $clubhouseTeamName: String!
   # Clubhouse token to fetch information from the Clubhouse API.
   $clubhouseToken: String!
+  # ID of issue import. If not provided it will be generated.
+  $id: String
   # Whether to instantly process the import with the default configuration mapping.
   $instantProcess: Boolean
   # ID of the team into which to import data.
@@ -5257,6 +5317,7 @@ mutation issueImportCreateClubhouse(
   issueImportCreateClubhouse(
     clubhouseTeamName: $clubhouseTeamName
     clubhouseToken: $clubhouseToken
+    id: $id
     instantProcess: $instantProcess
     teamId: $teamId
   ) {
@@ -5273,6 +5334,8 @@ mutation issueImportCreateGithub(
   $githubShouldImportOrgProjects: Boolean
   # Github token to fetch information from the Github API.
   $githubToken: String!
+  # ID of issue import. If not provided it will be generated.
+  $id: String
   # Whether to instantly process the import with the default configuration mapping.
   $instantProcess: Boolean
   # ID of the team into which to import data.
@@ -5283,6 +5346,7 @@ mutation issueImportCreateGithub(
     githubRepoOwner: $githubRepoOwner
     githubShouldImportOrgProjects: $githubShouldImportOrgProjects
     githubToken: $githubToken
+    id: $id
     instantProcess: $instantProcess
     teamId: $teamId
   ) {
@@ -5291,6 +5355,8 @@ mutation issueImportCreateGithub(
 }
 # Kicks off a Jira import job.
 mutation issueImportCreateJira(
+  # ID of issue import. If not provided it will be generated.
+  $id: String
   # Whether to instantly process the import with the default configuration mapping.
   $instantProcess: Boolean
   # Jira user account email.
@@ -5305,6 +5371,7 @@ mutation issueImportCreateJira(
   $teamId: String!
 ) {
   issueImportCreateJira(
+    id: $id
     instantProcess: $instantProcess
     jiraEmail: $jiraEmail
     jiraHostname: $jiraHostname

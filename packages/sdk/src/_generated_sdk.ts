@@ -847,6 +847,7 @@ export class Cycle extends Request {
   public constructor(request: LinearRequest, data: L.CycleFragment) {
     super(request);
     this.archivedAt = parseDate(data.archivedAt) ?? undefined;
+    this.autoArchivedAt = parseDate(data.autoArchivedAt) ?? undefined;
     this.completedAt = parseDate(data.completedAt) ?? undefined;
     this.completedIssueCountHistory = data.completedIssueCountHistory ?? undefined;
     this.completedScopeHistory = data.completedScopeHistory ?? undefined;
@@ -864,6 +865,8 @@ export class Cycle extends Request {
 
   /** The time at which the entity was archived. Null if the entity has not been archived. */
   public archivedAt?: Date;
+  /** The time at which the cycle was automatically archived by the auto pruning process. */
+  public autoArchivedAt?: Date;
   /** The completion time of the cycle. If null, the cycle hasn't been completed. */
   public completedAt?: Date;
   /** The number of completed issues in the cycle after each day. */
@@ -1985,6 +1988,51 @@ export class IssueConnection extends Connection<Issue> {
   }
 }
 /**
+ * IssueDescriptionHistory model
+ *
+ * @param request - function to call the graphql client
+ * @param data - L.IssueDescriptionHistoryFragment response data
+ */
+export class IssueDescriptionHistory extends Request {
+  public constructor(request: LinearRequest, data: L.IssueDescriptionHistoryFragment) {
+    super(request);
+    this.actorId = data.actorId ?? undefined;
+    this.descriptionData = data.descriptionData ?? undefined;
+    this.id = data.id ?? undefined;
+    this.type = data.type ?? undefined;
+    this.updatedAt = parseDate(data.updatedAt) ?? undefined;
+  }
+
+  /** The ID of the author of the change. */
+  public actorId?: string;
+  /** The description data of the issue as a JSON serialized string. */
+  public descriptionData?: string;
+  /** The UUID of the change. */
+  public id?: string;
+  /** The type of the revision, whether it was the creation or update of the issue. */
+  public type?: string;
+  /** The date when the description was updated. */
+  public updatedAt?: Date;
+}
+/**
+ * IssueDescriptionHistoryPayload model
+ *
+ * @param request - function to call the graphql client
+ * @param data - L.IssueDescriptionHistoryPayloadFragment response data
+ */
+export class IssueDescriptionHistoryPayload extends Request {
+  public constructor(request: LinearRequest, data: L.IssueDescriptionHistoryPayloadFragment) {
+    super(request);
+    this.success = data.success ?? undefined;
+    this.history = data.history ? data.history.map(node => new IssueDescriptionHistory(request, node)) : undefined;
+  }
+
+  /** Whether the operation was successful. */
+  public success?: boolean;
+  /** The issue that was created or updated. */
+  public history?: IssueDescriptionHistory[];
+}
+/**
  * A record of changes to an issue.
  *
  * @param request - function to call the graphql client
@@ -2019,7 +2067,6 @@ export class IssueHistory extends Request {
     this.fromPriority = data.fromPriority ?? undefined;
     this.fromTitle = data.fromTitle ?? undefined;
     this.id = data.id ?? undefined;
-    this.relationChanges = data.relationChanges ?? undefined;
     this.removedLabelIds = data.removedLabelIds ?? undefined;
     this.source = parseJson(data.source) ?? undefined;
     this.toDueDate = data.toDueDate ?? undefined;
@@ -2028,6 +2075,9 @@ export class IssueHistory extends Request {
     this.toTitle = data.toTitle ?? undefined;
     this.updatedAt = parseDate(data.updatedAt) ?? undefined;
     this.updatedDescription = data.updatedDescription ?? undefined;
+    this.relationChanges = data.relationChanges
+      ? data.relationChanges.map(node => new IssueRelationHistoryPayload(request, node))
+      : undefined;
     this._actor = data.actor ?? undefined;
     this._fromAssignee = data.fromAssignee ?? undefined;
     this._fromCycle = data.fromCycle ?? undefined;
@@ -2064,8 +2114,6 @@ export class IssueHistory extends Request {
   public fromTitle?: string;
   /** The unique identifier of the entity. */
   public id?: string;
-  /** Changed issue relationships. */
-  public relationChanges?: string;
   /** ID's of labels that were removed. */
   public removedLabelIds?: string[];
   /** Information about the integration or application which created this history entry. */
@@ -2085,6 +2133,8 @@ export class IssueHistory extends Request {
   public updatedAt?: Date;
   /** Whether the issue's description was updated. */
   public updatedDescription?: boolean;
+  /** Changed issue relationships. */
+  public relationChanges?: IssueRelationHistoryPayload[];
   /** The user who made these changes. If null, possibly means that the change made by an integration. */
   public get actor(): LinearFetch<User> | undefined {
     return this._actor?.id ? new UserQuery(this._request).fetch(this._actor?.id) : undefined;
@@ -2474,6 +2524,24 @@ export class IssueRelationConnection extends Connection<IssueRelation> {
       data?.pageInfo ? new PageInfo(request, data.pageInfo) : undefined
     );
   }
+}
+/**
+ * Issue relation history's payload
+ *
+ * @param request - function to call the graphql client
+ * @param data - L.IssueRelationHistoryPayloadFragment response data
+ */
+export class IssueRelationHistoryPayload extends Request {
+  public constructor(request: LinearRequest, data: L.IssueRelationHistoryPayloadFragment) {
+    super(request);
+    this.identifier = data.identifier ?? undefined;
+    this.type = data.type ?? undefined;
+  }
+
+  /** The identifier of the related issue. */
+  public identifier?: string;
+  /** The type of the change. */
+  public type?: string;
 }
 /**
  * IssueRelationPayload model
@@ -3301,6 +3369,7 @@ export class Project extends Request {
   public constructor(request: LinearRequest, data: L.ProjectFragment) {
     super(request);
     this.archivedAt = parseDate(data.archivedAt) ?? undefined;
+    this.autoArchivedAt = parseDate(data.autoArchivedAt) ?? undefined;
     this.canceledAt = parseDate(data.canceledAt) ?? undefined;
     this.color = data.color ?? undefined;
     this.completedAt = parseDate(data.completedAt) ?? undefined;
@@ -3318,6 +3387,7 @@ export class Project extends Request {
     this.slackNewIssue = data.slackNewIssue ?? undefined;
     this.slugId = data.slugId ?? undefined;
     this.sortOrder = data.sortOrder ?? undefined;
+    this.startDate = data.startDate ?? undefined;
     this.startedAt = parseDate(data.startedAt) ?? undefined;
     this.state = data.state ?? undefined;
     this.targetDate = data.targetDate ?? undefined;
@@ -3329,6 +3399,8 @@ export class Project extends Request {
 
   /** The time at which the entity was archived. Null if the entity has not been archived. */
   public archivedAt?: Date;
+  /** The time at which the project was automatically archived by the auto pruning process. */
+  public autoArchivedAt?: Date;
   /** The time at which the project was moved into canceled state. */
   public canceledAt?: Date;
   /** The project's color. */
@@ -3363,6 +3435,8 @@ export class Project extends Request {
   public slugId?: string;
   /** The sort order for the project within its milestone. */
   public sortOrder?: number;
+  /** [Internal] The estimated start date of the project. */
+  public startDate?: string;
   /** The time at which the project was moved into started state. */
   public startedAt?: Date;
   /** The type of the state. */
@@ -5973,6 +6047,35 @@ export class IssueQuery extends Request {
 }
 
 /**
+ * A fetchable IssueDescriptionHistory Query
+ *
+ * @param request - function to call the graphql client
+ */
+export class IssueDescriptionHistoryQuery extends Request {
+  public constructor(request: LinearRequest) {
+    super(request);
+  }
+
+  /**
+   * Call the IssueDescriptionHistory query and return a IssueDescriptionHistoryPayload
+   *
+   * @param id - required id to pass to issueDescriptionHistory
+   * @returns parsed response from IssueDescriptionHistoryQuery
+   */
+  public async fetch(id: string): LinearFetch<IssueDescriptionHistoryPayload> {
+    return this._request<L.IssueDescriptionHistoryQuery, L.IssueDescriptionHistoryQueryVariables>(
+      L.IssueDescriptionHistoryDocument,
+      {
+        id,
+      }
+    ).then(response => {
+      const data = response?.issueDescriptionHistory;
+      return data ? new IssueDescriptionHistoryPayload(this._request, data) : undefined;
+    });
+  }
+}
+
+/**
  * A fetchable IssueImportFinishGithubOAuth Query
  *
  * @param request - function to call the graphql client
@@ -7208,6 +7311,37 @@ export class AttachmentCreateMutation extends Request {
       input,
     }).then(response => {
       const data = response?.attachmentCreate;
+      return data ? new AttachmentPayload(this._request, data) : undefined;
+    });
+  }
+}
+
+/**
+ * A fetchable AttachmentLinkZendesk Mutation
+ *
+ * @param request - function to call the graphql client
+ */
+export class AttachmentLinkZendeskMutation extends Request {
+  public constructor(request: LinearRequest) {
+    super(request);
+  }
+
+  /**
+   * Call the AttachmentLinkZendesk mutation and return a AttachmentPayload
+   *
+   * @param issueId - required issueId to pass to attachmentLinkZendesk
+   * @param ticketId - required ticketId to pass to attachmentLinkZendesk
+   * @returns parsed response from AttachmentLinkZendeskMutation
+   */
+  public async fetch(issueId: string, ticketId: string): LinearFetch<AttachmentPayload> {
+    return this._request<L.AttachmentLinkZendeskMutation, L.AttachmentLinkZendeskMutationVariables>(
+      L.AttachmentLinkZendeskDocument,
+      {
+        issueId,
+        ticketId,
+      }
+    ).then(response => {
+      const data = response?.attachmentLinkZendesk;
       return data ? new AttachmentPayload(this._request, data) : undefined;
     });
   }
@@ -13398,6 +13532,15 @@ export class LinearSdk extends Request {
     return new IssueQuery(this._request).fetch(id);
   }
   /**
+   * [Internal] The history of issue descriptions.
+   *
+   * @param id - required id to pass to issueDescriptionHistory
+   * @returns IssueDescriptionHistoryPayload
+   */
+  public issueDescriptionHistory(id: string): LinearFetch<IssueDescriptionHistoryPayload> {
+    return new IssueDescriptionHistoryQuery(this._request).fetch(id);
+  }
+  /**
    * Fetches the GitHub token, completing the OAuth flow.
    *
    * @param code - required code to pass to issueImportFinishGithubOAuth
@@ -13815,6 +13958,16 @@ export class LinearSdk extends Request {
    */
   public attachmentCreate(input: L.AttachmentCreateInput): LinearFetch<AttachmentPayload> {
     return new AttachmentCreateMutation(this._request).fetch(input);
+  }
+  /**
+   * Link an existing Zendesk ticket to an issue.
+   *
+   * @param issueId - required issueId to pass to attachmentLinkZendesk
+   * @param ticketId - required ticketId to pass to attachmentLinkZendesk
+   * @returns AttachmentPayload
+   */
+  public attachmentLinkZendesk(issueId: string, ticketId: string): LinearFetch<AttachmentPayload> {
+    return new AttachmentLinkZendeskMutation(this._request).fetch(issueId, ticketId);
   }
   /**
    * [Alpha] Updates an existing issue attachment.
